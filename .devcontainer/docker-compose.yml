@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/java:17
+    volumes:
+      - ../..:/workspaces:cached
+    # Mantém o container rodando
+    command: sleep infinity
+    
+    # Diz que o Java precisa esperar o banco ligar
+    depends_on:
+      - db
+    
+    # Configura a rede para eles se enxergarem
+    networks:
+      - board-network
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: boards_db
+    networks:
+      - board-network
+
+networks:
+  board-network:
