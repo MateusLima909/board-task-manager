@@ -44,6 +44,14 @@ public class BoardService {
         return boardDAO.findById(id);
     }
 
+    public BoardEntity[] findAll() throws Exception {
+        return boardDAO.findAll();
+    }
+
+    public void update(final BoardEntity entity) throws Exception {
+        boardDAO.update(entity);
+    }
+
     public boolean delete(final Long id) throws Exception {
         BoardEntity entity = boardDAO.findById(id);
 

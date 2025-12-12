@@ -27,6 +27,23 @@ public class BoardDAO {
         return entity;
     }
 
+    public BoardEntity[] findAll() throws SQLException {
+        String sql = "SELECT id, name FROM BOARDS;";
+        try(Connection connection = ConnectionConfig.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            var resultSet = statement.executeQuery()) {
+            
+            var boards = new java.util.ArrayList<BoardEntity>();
+            while(resultSet.next()) {
+                BoardEntity entity = new BoardEntity();
+                entity.setId(resultSet.getLong("id"));
+                entity.setName(resultSet.getString("name"));
+                boards.add(entity);
+            }
+            return boards.toArray(new BoardEntity[0]);
+        }
+    }
+
     public BoardEntity findById(final Long id) throws SQLException {
         String sql = "SELECT id, name FROM BOARDS WHERE id = ?;";
 
@@ -45,6 +62,18 @@ public class BoardDAO {
             }
         }
         return null;
+    }
+
+    public void update(final BoardEntity entity) throws SQLException {
+        String sql = "UPDATE BOARDS SET name = ? WHERE id = ?;";
+        
+        try(Connection connection = ConnectionConfig.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql)) {
+            
+            statement.setString(1,  entity.getName());
+            statement.setLong(2, entity.getId());
+            statement.executeUpdate();
+        }   
     }
 
     public void delete(final Long id) throws SQLException {
