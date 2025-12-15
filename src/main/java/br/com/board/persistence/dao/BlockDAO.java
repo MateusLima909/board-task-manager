@@ -2,6 +2,7 @@ package br.com.board.persistence.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -27,6 +28,33 @@ public class BlockDAO {
             }
         }
         return entity;
+    }
+
+    public boolean isBlocked(final Long cardId) throws SQLException {
+        String sql = "SELECT id FROM BLOCKS WHERE card_id = ? AND unblocked_at IS NULL";
+
+        try (Connection connection = ConnectionConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, cardId);
+            
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public void unblock(final Long cardId, final String reason) throws SQLException {
+        String sql = "UPDATE BLOCKS SET unblocked_at = ?, unblocked_reason = ? WHERE card_id = ? AND unblocked_at IS NULL";
+        
+        try (Connection connection = ConnectionConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            
+            statement.setObject(1, java.time.OffsetDateTime.now()); // Data de agora
+            statement.setString(2, reason);
+            statement.setLong(3, cardId);
+            
+            statement.executeUpdate();
+        }
     }
 }
 
