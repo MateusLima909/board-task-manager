@@ -1,6 +1,7 @@
 package br.com.board.service;
 
 import java.sql.SQLException;
+
 import java.util.ArrayList;
 
 import br.com.board.dto.BoardColumnInfoDTO;
@@ -24,13 +25,13 @@ public class BoardQueryService {
 
         var columns = boardColumnDAO.findByBoardId(board.getId());
         var columnsDTO = new ArrayList<BoardColumnInfoDTO>();
-        var isBlocked = blockDAO.isBlocked(board.getId());
-
+        
         for (var column : columns) {
             var cards = cardDAO.findByColumnId(column.getId());
             var cardsDTO = new ArrayList<CardDetailsDTO>();
             
             for (var card : cards) {
+                var isBlocked = blockDAO.isBlocked(card.getId());
                 cardsDTO.add(new CardDetailsDTO(
                     card.getId(), 
                     card.getTitle(), 

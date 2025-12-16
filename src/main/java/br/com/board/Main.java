@@ -85,6 +85,19 @@ public class Main {
             ctx.status(201).json(createdCard);
         });
 
+        app.delete("/cards/{id}", ctx -> {
+            cardService.delete(Long.parseLong(ctx.pathParam("id")));
+            ctx.status(204);
+        });
+
+        app.put("/cards/{id}", ctx -> {
+            Long cardId = Long.parseLong(ctx.pathParam("id"));
+            var dto = ctx.bodyAsClass(CardUpdateDTO.class); 
+            
+            cardService.update(cardId, dto.getTitle(), dto.getDescription());
+            ctx.status(204);
+        });
+
         app.post("/cards/{id}/move", ctx -> {
             Long cardId = Long.parseLong(ctx.pathParam("id"));
   
@@ -112,14 +125,21 @@ public class Main {
 
             ctx.status(200).result("Card desbloqueado com sucesso");
         });
-
-
     }
-    
 }
 
 class BlockDTO {
     private String reason;
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
+}
+
+class CardUpdateDTO {
+    private String title;
+    private String description;
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

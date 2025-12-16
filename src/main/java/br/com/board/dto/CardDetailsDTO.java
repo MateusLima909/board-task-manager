@@ -20,6 +20,8 @@ public class CardDetailsDTO {
     public Long getId() { return id; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
-    public Boolean getBlocked() { return blocked; }
+    public Boolean isBlocked() { return blocked; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+
+    public void setBlocked(Boolean blocked) { this.blocked = blocked; }
 }

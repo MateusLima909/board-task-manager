@@ -1,5 +1,7 @@
 package br.com.board.service;
 
+import java.sql.SQLException;
+
 import br.com.board.persistence.dao.BoardColumnDAO;
 import br.com.board.persistence.dao.CardDAO;
 import br.com.board.persistence.dao.BlockDAO;
@@ -7,7 +9,6 @@ import br.com.board.persistence.entity.CardEntity;
 import br.com.board.persistence.entity.BlockEntity;
 import br.com.board.persistence.entity.BoardColumnKind;
 
-import java.sql.SQLException;
 import java.time.OffsetDateTime;
 
 public class CardService {
@@ -33,6 +34,19 @@ public class CardService {
         entity.setCreatedAt(OffsetDateTime.now());
         entity.setColumnId(initialColumnId);
         return cardDAO.insert(entity);
+    }
+
+    public void delete(final Long id) throws SQLException {
+        cardDAO.delete(id);
+    }
+
+    public void update(final Long id, final String title, final String description) throws SQLException {
+        var card = cardDAO.findById(id);
+        if (card == null) throw new RuntimeException("Card não encontrado");
+
+        card.setTitle(title);
+        card.setDescription(description);
+        cardDAO.update(card);
     }
 
     public void block(final Long cardId, final String reason) throws SQLException {

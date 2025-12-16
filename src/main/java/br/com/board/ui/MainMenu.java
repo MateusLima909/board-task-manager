@@ -1,8 +1,9 @@
 package br.com.board.ui;
 
+import java.util.Scanner;
+
 import br.com.board.persistence.entity.BoardEntity;
 import br.com.board.service.BoardService;
-import java.util.Scanner;
 
 public class MainMenu {
 

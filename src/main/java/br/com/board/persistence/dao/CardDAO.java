@@ -35,6 +35,26 @@ public class CardDAO {
         return entity;
     }
 
+    public void delete(final Long id) throws SQLException {
+        String sql = "DELETE FROM CARDS WHERE id = ?";
+        try (var connection = ConnectionConfig.getConnection();
+             var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
+        }
+    }
+
+    public void update(final CardEntity entity) throws SQLException {
+        String sql = "UPDATE CARDS SET title = ?, description = ? WHERE id = ?";
+        try (Connection connection = ConnectionConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, entity.getTitle());
+            statement.setString(2, entity.getDescription());
+            statement.setLong(3, entity.getId());
+            statement.executeUpdate();
+        }
+    }
+
     public CardEntity findById(final Long id) throws SQLException {
         String sql = "SELECT id, title, description, column_id, created_at FROM CARDS WHERE id = ?";
         try (Connection connection = ConnectionConfig.getConnection();
