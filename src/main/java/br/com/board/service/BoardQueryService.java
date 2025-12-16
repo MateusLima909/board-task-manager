@@ -6,12 +6,14 @@ import java.util.ArrayList;
 import br.com.board.dto.BoardColumnInfoDTO;
 import br.com.board.dto.BoardDetailsDTO;
 import br.com.board.dto.CardDetailsDTO;
+import br.com.board.persistence.dao.BlockDAO;
 import br.com.board.persistence.dao.BoardColumnDAO;
 import br.com.board.persistence.dao.BoardDAO;
 import br.com.board.persistence.dao.CardDAO;
 import br.com.board.persistence.entity.BoardEntity;
 
 public class BoardQueryService {
+    private final BlockDAO blockDAO = new BlockDAO();
     private final BoardDAO boardDAO = new BoardDAO();
     private final BoardColumnDAO boardColumnDAO = new BoardColumnDAO();
     private final CardDAO cardDAO = new CardDAO();
@@ -22,6 +24,7 @@ public class BoardQueryService {
 
         var columns = boardColumnDAO.findByBoardId(board.getId());
         var columnsDTO = new ArrayList<BoardColumnInfoDTO>();
+        var isBlocked = blockDAO.isBlocked(board.getId());
 
         for (var column : columns) {
             var cards = cardDAO.findByColumnId(column.getId());
@@ -32,6 +35,7 @@ public class BoardQueryService {
                     card.getId(), 
                     card.getTitle(), 
                     card.getDescription(), 
+                    isBlocked,
                     card.getCreatedAt()
                 ));
             }

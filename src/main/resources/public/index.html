@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        body { background-color: #f8f9fa; }
+        .column-card { min-width: 300px; max-width: 300px; margin-right: 15px; }
+        .kanban-container { display: flex; overflow-x: auto; padding-bottom: 20px; height: calc(100vh - 150px); }
+        .card-task { cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .card-task:hover { transform: scale(1.02); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        /* Cores das Bordas */
+        .border-INICIAL { border-left-color: #0d6efd !important; }
+        .border-PENDENTE { border-left-color: #ffc107 !important; }
+        .border-FINAL { border-left-color: #198754 !important; }
+        .border-CANCELAMENTO { border-left-color: #dc3545 !important; }
+        
+        /* Esconder telas */
+        .d-none { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-kanban"></i> TaskMaster Pro
+            </span>
+            <button class="btn btn-outline-light btn-sm" onclick="showHome()">
+                <i class="bi bi-house-door"></i> Meus Boards
+            </button>
+        </div>
+    </nav>
+
+    <div id="view-home" class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Meus Projetos</h3>
+            <button class="btn btn-primary" onclick="createBoard()">
+                <i class="bi bi-plus-lg"></i> Novo Board
+            </button>
+        </div>
+        <div id="boards-list" class="row">
+            <div class="text-center mt-5"><div class="spinner-border"></div></div>
+        </div>
+    </div>
+
+    <div id="view-board" class="container-fluid d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 id="board-title">Nome do Projeto</h3>
+            <div>
+                <button class="btn btn-danger btn-sm" onclick="deleteCurrentBoard()">
+                    <i class="bi bi-trash"></i> Excluir Board
+                </button>
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#newCardModal">
+                    <i class="bi bi-plus-lg"></i> Nova Tarefa
+                </button>
+            </div>
+        </div>
+        
+        <div id="kanban-columns" class="kanban-container">
+            </div>
+    </div>
+
+    <div class="modal fade" id="newCardModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Tarefa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="inputCardTitle" class="form-control mb-2" placeholder="Título da tarefa">
+                    <textarea id="inputCardDesc" class="form-control" placeholder="Descrição detalhada"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveCard()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentBoardId = null;
+
+        function showHome() {
+            document.getElementById('view-home').classList.remove('d-none');
+            document.getElementById('view-board').classList.add('d-none');
+            loadBoardsList();
+        }
+
+        function showBoard(id, name) {
+            currentBoardId = id;
+            document.getElementById('view-home').classList.add('d-none');
+            document.getElementById('view-board').classList.remove('d-none');
+            document.getElementById('board-title').innerText = name;
+            loadKanbanDetails(id);
+        }
+
+        async function loadBoardsList() {
+            const list = document.getElementById('boards-list');
+            list.innerHTML = '<div class="spinner-border"></div>';
+            
+            try {
+                const res = await fetch('/boards');
+                const boards = await res.json();
+                
+                list.innerHTML = '';
+                boards.forEach(b => {
+                    list.innerHTML += `
+                        <div class="col-md-4 mb-3">
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">${b.name}</h5>
+                                    <p class="card-text text-muted">ID: ${b.id}</p>
+                                    <button class="btn btn-outline-primary w-100" onclick="showBoard(${b.id}, '${b.name}')">
+                                        Abrir Board
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="alert alert-danger">Erro ao carregar boards</div>';
+            }
+        }
+
+        async function createBoard() {
+            const name = prompt("Nome do novo Board:");
+            if(!name) return;
+            
+            await fetch('/boards', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name})
+            });
+            loadBoardsList();
+        }
+
+        async function deleteCurrentBoard() {
+            if(!confirm("Tem certeza? Isso apagará todas as tarefas!")) return;
+            await fetch(`/boards/${currentBoardId}`, { method: 'DELETE' });
+            showHome();
+        }
+
+        async function loadKanbanDetails(boardId) {
+            const container = document.getElementById('kanban-columns');
+            container.innerHTML = 'Carregando...';
+
+            try {
+                const res = await fetch(`/boards/${boardId}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+
+                container.innerHTML = '';
+                
+                data.columns.forEach(col => {
+                    let cardsHtml = '';
+                    col.cards.forEach(card => {
+                        const bgClass = card.blocked ? 'bg-danger-subtle' : 'bg-light';
+                        cardsHtml += `
+                            <div class="card mb-2 card-task border-${col.kind} ${bgClass}">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="card-title mb-1">${card.title}</h6>
+                                        <div class="dropdown">
+                                            <button class="btn btn-light btn-sm py-0" data-bs-toggle="dropdown">⋮</button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#" onclick="moveCard(${card.id})">Mover Próximo</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="editCard(${card.id}, '${card.title}', '${card.description}')">Editar</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="blockCard(${card.id})">Bloquear</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="unblockCard(${card.id})">Desbloquear</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteCard(${card.id})">Excluir</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.8em">${card.description}</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    container.innerHTML += `
+                        <div class="column-card">
+                            <div class="card bg-light h-100">
+                                <div class="card-header fw-bold text-uppercase small d-flex justify-content-between">
+                                    ${col.name} <span class="badge bg-secondary">${col.cards.length}</span>
+                                </div>
+                                <div class="card-body overflow-auto" style="max-height: 70vh">
+                                    ${cardsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                container.innerHTML = 'Erro ao carregar colunas.';
+            }
+        }
+
+        async function saveCard() {
+            const title = document.getElementById('inputCardTitle').value;
+            const desc = document.getElementById('inputCardDesc').value;
+            
+            await fetch(`/boards/${currentBoardId}/cards`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title, description: desc})
+            });
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newCardModal'));
+            modal.hide();
+            document.getElementById('inputCardTitle').value = '';
+            document.getElementById('inputCardDesc').value = '';
+            loadKanbanDetails(currentBoardId);
+        }
+
+        async function moveCard(id) {
+            const res = await fetch(`/cards/${id}/move`, { method: 'POST' });
+            if (!res.ok) alert("Não foi possível mover (bloqueado ou fim do fluxo)");
+            loadKanbanDetails(currentBoardId);
+        }
+
+        async function blockCard(id) {
+            const reason = prompt("Motivo do bloqueio:");
+            if(!reason) return;
+            await fetch(`/cards/${id}/block`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reason})
+            });
+            loadKanbanDetails(currentBoardId);
+        }
+
+        async function unblockCard(id) {
+            const reason = prompt("Motivo do desbloqueio:");
+            await fetch(`/cards/${id}/unblock`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reason})
+            });
+            loadKanbanDetails(currentBoardId);
+        }
+
+        async function deleteCard(id) {
+            if(!confirm("Deseja realmente excluir esta tarefa?")) return;
+            
+            await fetch(`/cards/${id}`, { method: 'DELETE' });
+            loadKanbanDetails(currentBoardId);
+        }
+
+        async function editCard(id, oldTitle, oldDesc) {
+            const newTitle = prompt("Novo Título:", oldTitle);
+            if (newTitle === null) return;
+            
+            const newDesc = prompt("Nova Descrição:", oldDesc);
+            
+            await fetch(`/cards/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ title: newTitle, description: newDesc })
+            });
+            loadKanbanDetails(currentBoardId);
+        }
+
+        loadBoardsList();
+    </script>
+</body>
+</html>

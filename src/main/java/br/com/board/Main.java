@@ -1,13 +1,16 @@
 package br.com.board;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import br.com.board.service.BoardQueryService;
+import br.com.board.persistence.dao.BoardDAO;
 import br.com.board.persistence.entity.BoardEntity;
 import br.com.board.persistence.entity.CardEntity;
+import br.com.board.service.BoardQueryService;
 import br.com.board.service.BoardService;
 import br.com.board.service.CardService;
+
+import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
 import io.javalin.Javalin;
 
@@ -22,9 +25,9 @@ public class Main {
 
         Javalin app = Javalin.create(config -> {
             config.jsonMapper(new JavalinJackson(objectMapper));
+            config.staticFiles.add("/public", Location.CLASSPATH);
         }).start(8080);
 
-        app.get("/", ctx -> ctx.result("Gerenciador de Boards rodando!"));
 
         app.get("/boards/{id}", ctx -> {
             Long id = Long.parseLong(ctx.pathParam("id")); 
@@ -39,8 +42,8 @@ public class Main {
         });
 
         app.get("/boards", ctx -> {
-            BoardEntity[] boards = service.findAll();
-            ctx.json(boards);
+            var boards = new BoardDAO();
+            ctx.json(boards.findAll());
         });
 
         app.post("/boards", ctx -> {

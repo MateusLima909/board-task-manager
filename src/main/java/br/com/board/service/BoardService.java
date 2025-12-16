@@ -1,5 +1,7 @@
 package br.com.board.service;
 
+import java.util.List;
+
 import br.com.board.persistence.dao.BoardColumnDAO;
 import br.com.board.persistence.dao.BoardDAO;
 import br.com.board.persistence.entity.BoardColumnEntity;
@@ -44,7 +46,7 @@ public class BoardService {
         return boardDAO.findById(id);
     }
 
-    public BoardEntity[] findAll() throws Exception {
+    public List<BoardEntity> findAll() throws Exception {
         return boardDAO.findAll();
     }
 

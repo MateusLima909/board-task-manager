@@ -4,8 +4,11 @@ import br.com.board.persistence.config.ConnectionConfig;
 import br.com.board.persistence.entity.BoardEntity;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BoardDAO {
 
@@ -27,20 +30,23 @@ public class BoardDAO {
         return entity;
     }
 
-    public BoardEntity[] findAll() throws SQLException {
-        String sql = "SELECT id, name FROM BOARDS;";
-        try(Connection connection = ConnectionConfig.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql);
-            var resultSet = statement.executeQuery()) {
+    public List<BoardEntity> findAll() throws SQLException {
+        String sql = "SELECT id, name FROM BOARDS";
+        
+        try (Connection connection = ConnectionConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
             
-            var boards = new java.util.ArrayList<BoardEntity>();
-            while(resultSet.next()) {
+            var boards = new ArrayList<BoardEntity>();
+            
+            while (resultSet.next()) {
                 BoardEntity entity = new BoardEntity();
                 entity.setId(resultSet.getLong("id"));
                 entity.setName(resultSet.getString("name"));
                 boards.add(entity);
             }
-            return boards.toArray(new BoardEntity[0]);
+            
+            return boards; 
         }
     }
 
